@@ -303,7 +303,7 @@ connections:
     model: 2004
 
   stratux:
-    load: no
+    load: yes
     module: fixgw.plugins.stratux
 
 # Logging configuration - See Python logging.config module documenation
