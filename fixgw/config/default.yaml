@@ -11,9 +11,10 @@ database file: "{CONFIG}/database.yaml"
 # file listed will overwrite data in previous files
 # Plugins may overwrite this data as well.
 initialization files:
-  - "{CONFIG}/default.ini"
+  # - "{CONFIG}/default.ini"
   # - "{CONFIG}/c170b.ini"
   # - "{CONFIG}/fg_172.ini"
+  - "{CONFIG}/rotax582.ini"
 
 # Connections:
 # if 'load' is 'yes' the connection plugin will be loaded at program start
@@ -248,7 +249,7 @@ connections:
     mosi: 24
     cs: 25
 
-  # if you want several button copie this configuration with different setting like this [conn_button2]
+  # if you want several buttons, copy this configuration with different settings like this [conn_button2]
   button1:
     load: no
     module: fixgw.plugins.rpi_button
@@ -264,7 +265,7 @@ connections:
     rais_server_module: RAIS
     rais_config_path: /home/me/openEFIS/sensors_pubsub.yml
 
-  # Data Coputation
+  # Data Computation
   compute:
     load: yes
     module: fixgw.plugins.compute
@@ -291,7 +292,7 @@ connections:
       # - function: TAS
       # - function: DALT
   dimmer:
-    load: yes
+    load: no
     module: fixgw.plugins.dimmer
     DimmerDevice: /sys/class/backlight/intel_backlight/brightness
     Multiplier: 1.0

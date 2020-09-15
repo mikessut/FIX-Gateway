@@ -72,7 +72,8 @@ class db_item(object):
     def set_aux_value(self, name, value):
         if name not in self.aux:
             log.error("No aux {0} for {1}".format(name, self.description))
-            raise KeyError("Aux name {} not found".format(name))
+            log.error("{0} contains aux keys {1}".format(self.key, self.get_aux_list()))
+            raise KeyError("Aux name {} not found for item {}".format(name, self.key))
         try:
             self.aux[name] = self.dtype(value)
             if self.aux[name] < self._min: self.aux[name] = self._min
