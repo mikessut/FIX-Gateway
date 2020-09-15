@@ -9,7 +9,19 @@ import struct
 import math
 
 
-DETAILED_DEBUG = True
+DETAILED_DEBUG = False
+
+
+class InvalidDataException(Exception):
+    pass
+
+
+def unpack_check_valid(bytes, invalid_val=0x7fff):
+    val = struct.unpack('>h', bytes)[0]
+    if val == 0x7fff:
+        raise InvalidDataException()
+    return val
+
 
 class MainThread(threading.Thread):
     def __init__(self, parent):
@@ -34,27 +46,32 @@ class MainThread(threading.Thread):
                 continue
 
             if msg[0] == 0x4c:
-                roll      = struct.unpack('>h', msg[4:6])[0]/10.0
-                pitch     = struct.unpack('>h', msg[6:8])[0]/10.0
-                heading   = struct.unpack('>h', msg[8:10])[0]/10.0
-                slipskid  = struct.unpack('>h', msg[10:12])[0]/10.0
-                yawrate   = struct.unpack('>h', msg[12:14])[0]/10.0
-                g         = struct.unpack('>h', msg[14:16])[0]/10.0
-                ias       = struct.unpack('>h', msg[16:18])[0]/10.0
-                alt       = struct.unpack('>h', msg[18:20])[0] - 5000.5
-                vs        = struct.unpack('>h', msg[20:22])[0]
+                # Invalid values are shown here: https://github.com/cyoung/stratux/blob/master/main/gps.go
+                try:
+                    roll      = unpack_check_valid(msg[4:6])/10.0
+                    pitch     = unpack_check_valid(msg[6:8])/10.0
+                    heading   = unpack_check_valid(msg[8:10])/10.0
+                    slipskid  = unpack_check_valid(msg[10:12])/10.0
+                    yawrate   = unpack_check_valid(msg[12:14])/10.0
+                    g         = unpack_check_valid(msg[14:16])/10.0
+                    ias       = unpack_check_valid(msg[16:18])/10.0
+                    alt       = unpack_check_valid(msg[18:20], invalid_val=0xffff) - 5000.5
+                    vs        = unpack_check_valid(msg[20:22])
 
-                self.parent.db_write("PITCH", pitch)
-                self.parent.db_write("ROLL", roll)
-                self.parent.db_write("HEAD", heading)
+                    self.parent.db_write("PITCH", pitch)
+                    self.parent.db_write("ROLL", roll)
+                    self.parent.db_write("HEAD", heading)
 
-                self.parent.db_write("ALAT", -math.sin(slipskid*math.pi/180))
-                self.parent.db_write("ALT", alt)
-                self.parent.db_write("VS", vs)
-                if DETAILED_DEBUG:
-                    self.log.debug(f"Stratux AHRS message: Roll: {roll}, pitch: {pitch}, heading: {heading}, slipskid: {slipskid}, yawrate: {yawrate}, g: {g}, alt: {alt}, vs: {vs}")
+                    self.parent.db_write("ALAT", -math.sin(slipskid*math.pi/180))
+                    self.parent.db_write("ALT", alt)
+                    self.parent.db_write("VS", vs)
+                    if DETAILED_DEBUG:
+                        self.log.debug(f"Stratux AHRS message: Roll: {roll}, pitch: {pitch}, heading: {heading}, slipskid: {slipskid}, yawrate: {yawrate}, g: {g}, alt: {alt}, vs: {vs}")
+                except InvalidDataException:
+                    self.log.debug("Invalid data received from stratux.")
             elif msg[0] == 0x0a:
                 # ownship report
+                # Sent from: https://github.com/cyoung/stratux/blob/master/main/gen_gdl90.go
                 alt = struct.unpack('>h', msg[11:13])[0]
                 tmp = struct.unpack('BB', msg[14:16])
                 gnd_speed = (tmp[0] << 4) | (tmp[1] >> 4)
